@@ -1,9 +1,7 @@
-# Define the data types for specific columns
-dtype_dict = {
-    'id': 'int64',            # Integer type
-    'ticker': 'str',          # Categorical type
-    'tweet': 'str'
-}
-
-# Load CSV file with specified data types
-df = pd.read_csv('./data/stocktweet/stocktweet.csv', dtype=dtype_dict, parse_dates=['date'])
+# Database credentials
+hostname = 'mysql-14de7744-student-06ec.e.aivencloud.com'
+port=24884
+username = 'avnadmin'
+password = 'AVNS_es-sxOgVqlmYavz4rjQ'
+database_name = 'defaultdb'
+ca_cert_path = 'ca.pem'
