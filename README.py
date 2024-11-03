@@ -1,18 +1,11 @@
-# Define the SQL query for creating the table
-create_table_query = """
-CREATE TABLE IF NOT EXISTS stocktweet (
-    id INT PRIMARY KEY,
-    date DATE,
-    ticker VARCHAR(6),
-    tweet TEXT
-);
-"""
+# Create the SQLAlchemy engine for MySQL
+engine = create_engine(f"mysql+pymysql://{username}:{password}@{hostname}:{port}/{database_name}")
 
-# Execute the query to create the table
-try:
-    with connection.cursor() as cursor:
-        cursor.execute(create_table_query)
-        print("Table 'example_table' created successfully.")
-finally:
-    # Close the connection
-    connection.close()
+df['date'] = pd.to_datetime(df['date'], format='%d/%m/%Y')
+
+table_name="stocktweet"
+
+# Insert the data into the MySQL table
+df.to_sql(table_name, engine, if_exists='append', index=False)
+
+print("Data loaded into MySQL table successfully.")
