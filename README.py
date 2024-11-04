@@ -1,11 +1,4 @@
-# Create the SQLAlchemy engine for MySQL
-engine = create_engine(f"mysql+pymysql://{username}:{password}@{hostname}:{port}/{database_name}")
+Limitations of ARIMA
 
-df['date'] = pd.to_datetime(df['date'], format='%d/%m/%Y')
-
-table_name="stocktweet"
-
-# Insert the data into the MySQL table
-df.to_sql(table_name, engine, if_exists='append', index=False)
-
-print("Data loaded into MySQL table successfully.")
+    Stationarity Requirement: ARIMA requires the data to be stationary, which might necessitate transformations.
+    Complexity: Choosing the right parameters can be challenging, and it may not perform well with very complex or nonlinear patterns in the data.
