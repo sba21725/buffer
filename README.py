@@ -1,4 +1,1 @@
-Limitations of ARIMA
-
-    Stationarity Requirement: ARIMA requires the data to be stationary, which might necessitate transformations.
-    Complexity: Choosing the right parameters can be challenging, and it may not perform well with very complex or nonlinear patterns in the data.
+When dealing with time series analysis, particularly stock price prediction, traditional statistical models like ARIMA can be useful, but neural networks can capture more complex patterns and nonlinear relationships that might be missed by simpler models. However, stock prices are notoriously difficult to predict because of their high volatility, external market factors, and noise, making them a challenging task for any model.
