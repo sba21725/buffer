@@ -1,1 +1,7 @@
-When dealing with time series analysis, particularly stock price prediction, traditional statistical models like ARIMA can be useful, but neural networks can capture more complex patterns and nonlinear relationships that might be missed by simpler models. However, stock prices are notoriously difficult to predict because of their high volatility, external market factors, and noise, making them a challenging task for any model.
+1. Long Short-Term Memory (LSTM) Networks
+
+LSTM is one of the most widely used neural network architectures for time series forecasting, including stock prices. LSTM is a type of Recurrent Neural Network (RNN) designed to overcome the limitations of traditional RNNs, particularly the problem of vanishing gradients. It is capable of learning long-term dependencies and handling sequences of data efficiently.
+
+    Why LSTM for stock prices?
+        LSTM networks are effective for capturing sequential dependencies, making them suitable for time series data where the current stock price depends on previous prices.
+        They are better at handling longer sequences and remembering important features over time, which is critical in the highly temporal nature of stock price data.
