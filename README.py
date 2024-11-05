@@ -1,7 +1,9 @@
-4. Hybrid Models (CNN + LSTM)
+Pros:
 
-Combining CNN and LSTM (or GRU) can be powerful for stock price forecasting. CNN can be used to extract local patterns from the time series, and LSTM can model the sequential dependencies over time.
+    Combines the best of both worlds: local pattern recognition from CNN and sequence modeling from LSTM.
+    Can lead to improved accuracy in complex time series like stock prices.
 
-    Why Hybrid Models for stock prices?
-        Combining CNN and LSTM allows the model to capture both short-term and long-term patterns in stock prices.
-        This approach can improve predictive accuracy by leveraging the strengths of both architectures.
+Cons:
+
+    More complex to implement and tune.
+    Requires more computational power and time to train.
