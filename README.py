@@ -1,7 +1,9 @@
-3. Convolutional Neural Networks (CNN) for Time Series
+Pros:
 
-While CNNs are typically used for image data, they can also be effective for time series data. CNN can extract local patterns from the time series, which can help identify trends and patterns over fixed-length windows.
+    Effective in capturing local patterns.
+    Computationally efficient and fast to train.
 
-    Why CNN for stock prices?
-        CNNs can learn local patterns from time series, which can help capture short-term trends in stock prices.
-        They are computationally efficient and can be combined with LSTM or GRU to capture both local and sequential patterns.
+Cons:
+
+    CNN alone might not capture long-term dependencies well.
+    Best used in combination with RNN models like LSTM or GRU.
