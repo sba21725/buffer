@@ -1,9 +1,7 @@
-Pros:
+2. Gated Recurrent Units (GRU)
 
-    Captures both short- and long-term dependencies.
-    Effective in handling time series with complex patterns.
+GRU is another variant of RNN, similar to LSTM, but with a simpler architecture. GRUs use fewer gates compared to LSTMs, which reduces computational complexity and speeds up training.
 
-Cons:
-
-    Requires more data to train compared to simpler models.
-    Computationally intensive and can be slow to train.
+    Why GRU for stock prices?
+        GRU is simpler than LSTM and can be just as effective for certain tasks, particularly when you have less data.
+        It also handles sequence data well and has shown good performance on various time series problems.
