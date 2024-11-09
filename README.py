@@ -1,102 +1,86 @@
-# Function to evaluate ARIMA model with given order
-def evaluate_arima_model(order):
-    try:
-        model = ARIMA(train, order=order)
-        model_fit = model.fit()
-        predictions = model_fit.forecast(steps=len(test))
-        error = mean_squared_error(test, predictions)
-        return error
-    except:
-        return float("inf")
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
+from keras.models import Sequential
+from keras.layers import LSTM, Dense
+import keras_tuner as kt
+import matplotlib.pyplot as plt
 
-for ticker in tickers:
-    # Retrieve stockprice for a Company from MySQL
-    query = """
-        SELECT 
-            Stockprice.Date,
-            Stockprice.Close
-        FROM 
-            Stockprice
-        WHERE
-            Stockprice.ticker = '{}';
-    """.format(ticker)
+# Load your dataset (replace with your actual dataset path)
+data = stockprice_merged_df
+features = ['Open', 'High', 'Low', 'Close', 'Volume']
+data = data[features]
 
-    # Fetch data into a pandas DataFrame
-    stockprice_df = pd.read_sql(query, engine)
+# Normalize the data
+scaler = MinMaxScaler(feature_range=(0, 1))
+scaled_data = scaler.fit_transform(data)
 
-    # stockprice_df.fillna(0, inplace=True)
-    stockprice_df.set_index('Date', inplace=True)
-    print(ticker)
+# Prepare the data for LSTM
+def create_dataset(data, time_step=60, forecast_day=1):
+    X, y = [], []
+    for i in range(time_step, len(data) - forecast_day):
+        X.append(data[i - time_step:i, :])  # Use the past 'time_step' days of data
+        y.append(data[i + forecast_day - 1, 3])  # Predict 'Close' price at 'forecast_day' in the future
+    return np.array(X), np.array(y)
 
+time_step = 60
+X, y = create_dataset(scaled_data, time_step, forecast_day=1)
 
-    # ----------------------------------------------------------------------
-    # Hyperparameter Tuning
-    # ----------------------------------------------------------------------
+X = X.reshape(X.shape[0], X.shape[1], X.shape[2])
+
+# Step 1: Define a function to build the LSTM model for hyperparameter tuning
+def build_model(hp):
+    model = Sequential()
+
+    # Hyperparameter for the number of LSTM units
+    model.add(LSTM(units=hp.Int('units', min_value=50, max_value=200, step=50), 
+                   return_sequences=False, input_shape=(X.shape[1], X.shape[2])))
     
-    # Define the range of p, d, and q values to try
-    p_values = range(0, 5)
-    d_values = range(0, 5)
-    q_values = range(0, 5)
-
-    # Generate all combinations of p, d, q
-    pdq_combinations = list(itertools.product(p_values, d_values, q_values))
-
-    # Train-test split
-    train_size = int(len(stockprice_df) * 0.8)
-    train, test = stockprice_df[:train_size], stockprice_df[train_size:]
-
-    # Hyperparameter tuning
-    best_score, best_order = float("inf"), None
-
-    for order in pdq_combinations:
-        error = evaluate_arima_model(order)
-        if error < best_score:
-            best_score, best_order = error, order
-        print(f"ARIMA{order} MSE={error:.3f}")
-
-    print(f"Best ARIMA{best_order} MSE={best_score:.3f}")
-
-    # Fit and forecast using the best order
-    model = ARIMA(train, order=best_order)
-    model_fit = model.fit()
-
-
-    # Forecast for 1 day
-    forecast_1d = model_fit.forecast(steps=1)
+    # Hyperparameter for the dropout rate to prevent overfitting
+    model.add(Dense(units=1))  # Output: single value (close price)
     
-    # Forecast for 3 days
-    forecast_3d = model_fit.forecast(steps=3)
-
-    # Forecast for 7 days
-    forecast_7d = model_fit.forecast(steps=7)
-
-    print("FORECAST 1D ")
-    print(forecast_1d.iloc[0])
-    print("FORECASTS 3D ")
-    print(forecast_3d.iloc[2])
-    print("FORECASTS 7D ")
-    print(forecast_7d.iloc[6])
+    # Hyperparameter for optimizer learning rate
+    model.compile(optimizer=hp.Choice('optimizer', values=['adam', 'rmsprop']),
+                  loss='mean_squared_error')
     
-    
-    doc = {"ticker": ticker,
-         "1D": forecast_1d.iloc[0],
-         "3D": forecast_3d.iloc[0],
-         "7D": forecast_7d.iloc[0]}
+    return model
 
-    # Insert forecast into MongoDB Collection
-    result = arima_coll.insert_one(doc)
+# Step 2: Use Keras Tuner to find the best hyperparameters
+tuner = kt.Hyperband(build_model, 
+                     objective='val_loss', 
+                     max_epochs=10, 
+                     hyperband_iterations=2, 
+                     directory='my_dir', 
+                     project_name='lstm_tuning')
 
-    # Evaluate the model on test data
-    forecast_values = model_fit.forecast(steps=len(test))
-    mse = mean_squared_error(test, forecast_values)
-    print(f"Mean Squared Error: {mse}")
+# Step 3: Perform the hyperparameter search
+tuner.search(X, y, epochs=10, validation_split=0.2, batch_size=32)
 
-    # Plot results
-    plt.figure(figsize=(10, 6))
-    plt.plot(stockprice_df.index, stockprice_df['Close'], label='Close price')
-    plt.plot(test.index, forecast_values, label='Forecasted Close price', color='red')
-    plt.xlabel('Date')
-    plt.ylabel('Price')
-    plt.title('Close price')
-    plt.legend()
-    plt.show()
+# Step 4: Get the best hyperparameters
+best_model = tuner.get_best_models(num_models=1)[0]
+best_hyperparameters = tuner.get_best_hyperparameters(num_trials=1)[0]
+
+print("Best Hyperparameters:")
+print(best_hyperparameters)
+
+# Step 5: Train the model with the best hyperparameters
+best_model.fit(X, y, epochs=50, batch_size=32, validation_split=0.2)
+
+# Step 6: Make predictions with the best model
+predicted_price = best_model.predict(X)
+
+# Inverse transform the predicted data back to the original scale
+predicted_price = scaler.inverse_transform(np.hstack((np.zeros((predicted_price.shape[0], 4)), predicted_price)))
+
+# Step 7: Visualize the results
+actual_price = scaler.inverse_transform(np.hstack((scaled_data[time_step:], np.zeros((scaled_data.shape[0] - time_step, 4)))))
+
+# Plot the results
+plt.figure(figsize=(10,6))
+plt.plot(actual_price[:, 3], label='Actual Close Price')  # Column 3 is 'Close'
+plt.plot(predicted_price[:, 3], label='Predicted Close Price')
+plt.title('LSTM Model with Hyperparameter Tuning - Predicting Close Price')
+plt.xlabel('Time')
+plt.ylabel('Close Price')
+plt.legend()
+plt.show()
